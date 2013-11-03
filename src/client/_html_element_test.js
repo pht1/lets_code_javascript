@@ -60,7 +60,7 @@
 			});
 
 			it("allows mouse events to be triggered without coordinates", function() {
-				var eventPageOffset;
+				var eventPageOffset = {};
 				htmlElement.onMouseDown(function(pageOffset) {
 					eventPageOffset = pageOffset;
 				});
@@ -71,7 +71,7 @@
 
 			it("allows touch events to be triggered without coordinates", function() {
 				if (!browser.supportsTouchEvents()) return;
-				var eventPageOffset;
+				var eventPageOffset = {};
 				htmlElement.onSingleTouchStart(function(pageOffset) {
 					eventPageOffset = pageOffset;
 				});
@@ -149,7 +149,7 @@
 
 		describe("DOM manipulation", function() {
 
-			it.only("creates element from raw HTML; also, converts to DOM element", function() {
+			it("creates element from raw HTML; also, converts to DOM element", function() {
 				var element = HtmlElement.fromHtml("<code>foo</code>");
 
 				var domElement = element.toDomElement();

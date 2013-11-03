@@ -1,5 +1,5 @@
 // Copyright (c) 2012 Titanium I.T. LLC. All rights reserved. See LICENSE.txt for details.
-/*global Raphael, mocha, Touch */
+/*global Raphael, mocha, Touch, $ */
 
 (function() {
 	"use strict";
@@ -7,6 +7,7 @@
 	var client = require("./client.js");
 	var browser = require("./browser.js");
 	var HtmlElement = require("./html_element.js");
+    var Mouse = require("./mouse.js");
 
 	mocha.setup({ignoreLeaks: true});
 
@@ -19,10 +20,14 @@
 		beforeEach(function() {
 			documentBody = new HtmlElement(document.body);
 			windowElement = new HtmlElement(window);
-			drawingArea = HtmlElement.fromHtml("<div style='height: 300px; width: 600px'>hi</div>");
+			drawingArea = HtmlElement.fromHtml("<div id='drawingArea' style='height: 300px; width: 600px'>hi</div>");
 			drawingArea.appendSelfToBody();
 			svgCanvas = client.initializeDrawingArea(drawingArea);
-		});
+            dump("BODY HEIGHT " + $(document.body).height());
+            dump("BODY WIDTH " + $(document.body).width());
+            dump("WINDOW HEIGHT " + $(window).height());
+            dump("WINDOW WIDTH " + $(window).width());
+        });
 
 		afterEach(function() {
 			drawingArea.remove();
@@ -98,7 +103,128 @@
 				]);
 			});
 
-			it("continues drawing if mouse leaves drawing area and comes back in", function() {
+            it("continues drawing if mouse leaves drawing area and comes back in -- Mouse version", function() {
+                var mouse = new Mouse();
+
+                mouse.moveInsideDrawingArea(20, 30);
+                mouse.pressButton();
+                mouse.moveInsideDrawingArea(50, 60);
+
+                mouse.leaveDrawingArea(700, 70);
+                mouse.moveInsideDrawingArea(90, 40);
+
+                mouse.letGoOfButton();
+
+                expect(lineSegments()).to.eql([
+                    [20, 30, 50, 60],
+                    [50, 60, 700, 70],
+                    [700, 70, 90, 40]
+                ]);
+            });
+
+            it("stops drawing if mouse leaves drawing area and mouse button is released -- Mouse version", function() {
+                var mouse = new Mouse();
+
+                mouse.moveInsideDrawingArea(20, 30);
+                mouse.pressButton();
+                mouse.moveInsideDrawingArea(50, 60);
+
+                mouse.leaveDrawingArea(700, 70);
+                mouse.letGoOfButton();
+
+                mouse.moveInsideDrawingArea(90, 40);
+
+                expect(lineSegments()).to.eql([
+                    [20, 30, 50, 60],
+                    [50, 60, 700, 70]
+                ]);
+            });
+
+            it("stops drawing if mouse leaves window and mouse button is released -- Mouse version", function() {
+                var mouse = new Mouse();
+
+                mouse.moveInsideDrawingArea(20, 30);
+                mouse.pressButton();
+                mouse.moveInsideDrawingArea(50, 60);
+
+                mouse.leaveDrawingArea(700, 70);
+                mouse.leaveWindow();
+                mouse.letGoOfButton();
+
+                mouse.moveInsideDrawingArea(90, 40);
+
+                expect(lineSegments()).to.eql([
+                    [20, 30, 50, 60],
+                    [50, 60, 700, 70]
+                ]);
+            });
+
+            it("does not start drawing if drag is started outside drawing area -- Mouse version", function() {
+                var mouse = new Mouse();
+
+/* FIXME: these coordinates (namely the y coord) are outside document window for current setup
+So it is not possible to click there! And the original test would fire unrealistic events.
+ */
+                var clickedOnBody = false;
+                documentBody.onMouseDown(function() {
+                    clickedOnBody = true;
+                });
+
+                mouse.leaveDrawingArea(601, 150);
+                mouse.pressButton();
+                mouse.moveInsideDrawingArea(50, 60);
+                mouse.letGoOfButton();
+
+                mouse.leaveDrawingArea(-1, 150);
+                mouse.pressButton();
+                mouse.moveInsideDrawingArea(50, 60);
+                mouse.letGoOfButton();
+
+                mouse.leaveDrawingArea(120, 301);
+                mouse.pressButton();
+                mouse.moveInsideDrawingArea(50, 60);
+                mouse.letGoOfButton();
+
+                mouse.leaveDrawingArea(-1, 301);
+                mouse.pressButton();
+                mouse.moveInsideDrawingArea(50, 60);
+                mouse.letGoOfButton();
+
+                expect(lineSegments()).to.eql([]);
+                expect(clickedOnBody).to.be(true);
+            });
+
+            it("does start drawing if drag is initiated exactly at edge of drawing area -- Mouse version", function() {
+                var mouse = new Mouse();
+
+/* FIXME: two problems here
+
+1) the x-coord 600 is *outside* the area... because its width is 600, the inside x-coords are 0..599
+   (same with y-coord 300)
+2) same problem as above for y-coord 299 -> it lies outside window -> impossible to click here
+
+* */
+
+                mouse.moveInsideDrawingArea(599, 299);
+                mouse.pressButton();
+                mouse.moveInsideDrawingArea(50, 60);
+                mouse.letGoOfButton();
+
+                mouse.moveInsideDrawingArea(0, 0);
+                mouse.pressButton();
+                mouse.moveInsideDrawingArea(50, 60);
+                mouse.letGoOfButton();
+
+                expect(lineSegments()).to.eql([
+                    [599, 299, 50, 60],
+                    [0, 0, 50, 60]
+                ]);
+            });
+
+
+
+
+            it("continues drawing if mouse leaves drawing area and comes back in", function() {
 				drawingArea.doMouseDown(20, 30);
 				drawingArea.doMouseMove(50, 60);
 				drawingArea.doMouseLeave(700, 70);
@@ -136,6 +262,7 @@
 			});
 
 			it("stops drawing if mouse leaves window and mouse button is released", function() {
+
 				drawingArea.doMouseDown(20, 30);
 				drawingArea.doMouseMove(50, 60);
 				drawingArea.doMouseLeave(700, 70);
