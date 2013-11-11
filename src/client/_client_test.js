@@ -23,10 +23,6 @@
 			drawingArea = HtmlElement.fromHtml("<div id='drawingArea' style='height: 300px; width: 600px'>hi</div>");
 			drawingArea.appendSelfToBody();
 			svgCanvas = client.initializeDrawingArea(drawingArea);
-            dump("BODY HEIGHT " + $(document.body).height());
-            dump("BODY WIDTH " + $(document.body).width());
-            dump("WINDOW HEIGHT " + $(window).height());
-            dump("WINDOW WIDTH " + $(window).width());
         });
 
 		afterEach(function() {
@@ -162,14 +158,6 @@
             it("does not start drawing if drag is started outside drawing area -- Mouse version", function() {
                 var mouse = new Mouse();
 
-/* FIXME: these coordinates (namely the y coord) are outside document window for current setup
-So it is not possible to click there! And the original test would fire unrealistic events.
- */
-                var clickedOnBody = false;
-                documentBody.onMouseDown(function() {
-                    clickedOnBody = true;
-                });
-
                 mouse.leaveDrawingArea(601, 150);
                 mouse.pressButton();
                 mouse.moveInsideDrawingArea(50, 60);
@@ -191,19 +179,10 @@ So it is not possible to click there! And the original test would fire unrealist
                 mouse.letGoOfButton();
 
                 expect(lineSegments()).to.eql([]);
-                expect(clickedOnBody).to.be(true);
             });
 
             it("does start drawing if drag is initiated exactly at edge of drawing area -- Mouse version", function() {
                 var mouse = new Mouse();
-
-/* FIXME: two problems here
-
-1) the x-coord 600 is *outside* the area... because its width is 600, the inside x-coords are 0..599
-   (same with y-coord 300)
-2) same problem as above for y-coord 299 -> it lies outside window -> impossible to click here
-
-* */
 
                 mouse.moveInsideDrawingArea(599, 299);
                 mouse.pressButton();

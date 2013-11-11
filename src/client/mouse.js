@@ -11,12 +11,13 @@
             throw new Error("Unable to find drawingArea in the document");
         }
         this._drawingArea = new HtmlElement(drawingAreaDom);
+        this._body = new HtmlElement(document.body);
         this._currentPosition = {x: 0, y: 0};
     };
 
     Mouse.prototype.moveInsideDrawingArea = function (x, y) {
         this._currentPosition = this._drawingArea.pageOffset({x: x, y: y});
-        sendEventToElementAtPosition("mousemove", this._currentPosition);
+        sendEventToElementAtPosition("mousemove", this);
     };
 
     Mouse.prototype.leaveDrawingArea = function (x, y) {
@@ -28,25 +29,25 @@
     };
 
     Mouse.prototype.pressButton = function () {
-        sendEventToElementAtPosition("mousedown", this._currentPosition);
+        sendEventToElementAtPosition("mousedown", this);
     };
 
     Mouse.prototype.letGoOfButton = function () {
-        sendEventToElementAtPosition("mouseup", this._currentPosition);
+        sendEventToElementAtPosition("mouseup", this);
     };
 
-    function sendEventToElementAtPosition(eventType, position) {
+    function sendEventToElementAtPosition(eventType, self) {
         var Event = new MouseEvent(eventType, {
             'view': window,
             'bubbles': true,
             'cancelable': true,
-            'clientX': position.x,
-            'clientY': position.y
+            'clientX': self._currentPosition.x,
+            'clientY': self._currentPosition.y
         });
 
-        var element = document.elementFromPoint(position.x, position.y) || window;
-        dump(position);
-        dump("Elem: " + element.tagName);
+        var element = self._drawingArea.inside(self._currentPosition) ? self._drawingArea.toDomElement()
+                    : self._body.inside(self._currentPosition) ? self._body.toDomElement()
+                    : window;
         element.dispatchEvent(Event);
     }
 

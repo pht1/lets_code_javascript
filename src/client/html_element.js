@@ -69,6 +69,14 @@
         return pageOffset(this, relativeOffset.x, relativeOffset.y);
     };
 
+    HtmlElement.prototype.inside = function (pageOffset) {
+        var offset = relativeOffset(this, pageOffset.x, pageOffset.y);
+        return offset.x >= 0 &&
+            offset.y >= 0 &&
+            offset.x < this._element.width() &&
+            offset.y < this._element.height();
+    };
+
     HtmlElement.prototype.append = function (elementToAppend) {
         this._element.append(elementToAppend._element);
     };
